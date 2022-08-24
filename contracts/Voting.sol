@@ -4,7 +4,6 @@ pragma solidity ^0.8.9;
 contract Voting {
     address owner;
     address[] registeredVoter;
-    Contestant[] registeredContestant;
     mapping(address => uint256) voteCounter;
     mapping(address => bool) alreadyVoted;
     struct Contestant {
@@ -12,6 +11,7 @@ contract Voting {
         string name;
     }
 
+    Contestant[] registeredContestant;
 
     constructor() {
         owner = msg.sender;
@@ -74,7 +74,6 @@ contract Voting {
         }
     }
 
-
     function vote(address _contestant) external {
         address _voter = msg.sender;
         bool contestantStatus = validRegisteredContestant(_contestant);
@@ -89,5 +88,9 @@ contract Voting {
             alreadyVoted[_voter] = true;
             voteCounter[_contestant] += 1;
         }
+    }
+
+    function pickWinner(address _contestant) external view returns(uint winner) {
+        winner = voteCounter[_contestant];
     }
 }
