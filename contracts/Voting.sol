@@ -6,6 +6,7 @@ contract Voting {
     address[] registeredVoter;
     Contestant[] registeredContestant;
     mapping(address => uint256) voteCounter;
+    mapping(address => bool) alreadyVoted;
     struct Contestant {
         address contestant;
         string name;
@@ -73,7 +74,6 @@ contract Voting {
         }
     }
 
-    mapping(address => bool) alreadyVoted;
 
     function vote(address _contestant) external {
         address _voter = msg.sender;
