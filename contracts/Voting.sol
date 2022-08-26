@@ -157,4 +157,12 @@ contract Voting {
     {
         return winner;
     }
+
+    function returnContestants() external view returns(Contestant[] memory){
+        return registeredContestant;
+    }
+
+    function returnVoters() external view returns(address[] memory){
+        return registeredVoter;
+    }
 }
