@@ -27,27 +27,30 @@ contract Voting {
     }
 
     modifier onlyOfficial() {
-        require(official == msg.sender, "You are not eligible to perform this!");
+        require(
+            official == msg.sender,
+            "You are not eligible to perform this!"
+        );
         _;
     }
 
     function startVote() external {
-        if(registeredContestant.length < 2) {
+        if (registeredContestant.length < 2) {
             revert AtLeastTwoCandidateNeeded();
         }
-        if(startedVote) {
+        if (startedVote) {
             revert VotingStartedAlready();
         }
         startedVote = true;
     }
 
     function RegisterVoter() external {
-        if(startedVote) {
+        if (startedVote) {
             revert VotingStartedAlready();
         }
         address _voter = msg.sender;
 
-        if(_voter == address(0)) {
+        if (_voter == address(0)) {
             revert CannotRegisterAddressZero();
         }
 
@@ -74,8 +77,11 @@ contract Voting {
         }
     }
 
-    function RegisterContestant(address _contestant, string memory _name) external onlyOfficial {
-        if(startedVote) {
+    function RegisterContestant(address _contestant, string memory _name)
+        external
+        onlyOfficial
+    {
+        if (startedVote) {
             revert VotingStartedAlready();
         }
 
@@ -102,7 +108,7 @@ contract Voting {
     }
 
     function vote(address _contestant) external {
-        if(!startedVote) {
+        if (!startedVote) {
             revert VotingIsYetToStart();
         }
 
@@ -111,7 +117,7 @@ contract Voting {
         require(contestantStatus, "This address is not a contestant");
         bool status = validRegisteredVoter(_voter);
 
-        if(alreadyVoted[_voter] == true) {
+        if (alreadyVoted[_voter] == true) {
             revert AlreadyVoted();
         }
 
@@ -121,8 +127,8 @@ contract Voting {
 
         alreadyVoted[_voter] = true;
 
-        for (uint i = 0; i < voteContestantList.length; i++){
-            if(voteContestantList[i].contestant == _contestant) {
+        for (uint256 i = 0; i < voteContestantList.length; i++) {
+            if (voteContestantList[i].contestant == _contestant) {
                 // incrementing the vote count here
                 voteContestantList[i].voteCount++;
             }
@@ -133,8 +139,8 @@ contract Voting {
         Contestant memory __cont;
 
         uint64 winnerCounter;
-        for(uint256 i = 0; i < registeredContestant.length; i++){
-            if(winnerCounter < registeredContestant[i].voteCount){
+        for (uint256 i = 0; i < registeredContestant.length; i++) {
+            if (winnerCounter < registeredContestant[i].voteCount) {
                 winnerCounter = registeredContestant[i].voteCount;
                 __cont = registeredContestant[i];
             }
@@ -143,7 +149,12 @@ contract Voting {
         winner = __cont;
     }
 
-    function returnWinner() external view onlyOfficial returns(Contestant memory) {
+    function returnWinner()
+        external
+        view
+        onlyOfficial
+        returns (Contestant memory)
+    {
         return winner;
     }
 }
