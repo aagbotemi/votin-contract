@@ -8,6 +8,7 @@ contract Voting {
     mapping(address => bool) alreadyVoted;
     struct Contestant {
         address contestant;
+        string name;
         uint64 voteCount;
     }
 
@@ -22,6 +23,12 @@ contract Voting {
     error NotAContestant();
     error CannotRegisterAddressZero();
 
+    event CollateVote(Contestant indexed);
+    event Voted(address indexed __cont, address indexed voter);
+    event RegisterContestant(address indexed __cont, string indexed voter);
+    event RegisterVoter(address indexed _voter);
+    event StartVote(bool indexed status);
+    
     constructor() {
         official = msg.sender;
     }
@@ -42,9 +49,11 @@ contract Voting {
             revert VotingStartedAlready();
         }
         startedVote = true;
+
+        emit StartVote(true);
     }
 
-    function RegisterVoter() external {
+    function registerVoter() external {
         if (startedVote) {
             revert VotingStartedAlready();
         }
@@ -61,6 +70,8 @@ contract Voting {
         } else {
             revert("Already registered!");
         }
+
+        emit RegisterVoter(_voter);
     }
 
     function validRegisteredVoter(address _address)
@@ -77,7 +88,7 @@ contract Voting {
         }
     }
 
-    function RegisterContestant(address _contestant, string memory _name)
+    function registerContestant(address _contestant, string memory _name)
         external
         onlyOfficial
     {
@@ -87,10 +98,12 @@ contract Voting {
 
         bool status = validRegisteredContestant(_contestant);
         if (!status) {
-            registeredContestant.push(Contestant(_contestant, 0));
+            registeredContestant.push(Contestant(_contestant, _name, 0));
         } else {
             revert("Already registered!");
         }
+
+        emit RegisterContestant(_contestant, _name);
     }
 
     function validRegisteredContestant(address _address)
@@ -133,6 +146,8 @@ contract Voting {
                 voteContestantList[i].voteCount++;
             }
         }
+
+        emit Voted(_contestant, _voter);
     }
 
     function collateResult() external onlyOfficial {
@@ -147,6 +162,8 @@ contract Voting {
         }
 
         winner = __cont;
+
+        emit CollateVote(__cont);
     }
 
     function returnWinner()
