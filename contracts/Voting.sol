@@ -2,30 +2,54 @@
 pragma solidity ^0.8.9;
 
 contract Voting {
-    address owner;
+    bool startedVote;
+    address official;
     address[] registeredVoter;
-    mapping(address => uint256) voteCounter;
     mapping(address => bool) alreadyVoted;
     struct Contestant {
         address contestant;
-        string name;
+        uint64 voteCount;
     }
 
+    Contestant winner;
     Contestant[] registeredContestant;
+    Contestant[] voteContestantList;
+
+    error AtLeastTwoCandidateNeeded();
+    error VotingStartedAlready();
+    error AlreadyVoted();
+    error VotingIsYetToStart();
+    error NotAContestant();
+    error CannotRegisterAddressZero();
 
     constructor() {
-        owner = msg.sender;
+        official = msg.sender;
     }
 
-    modifier onlyOwner() {
-        require(owner == msg.sender, "You are not eligible to perform this!");
+    modifier onlyOfficial() {
+        require(official == msg.sender, "You are not eligible to perform this!");
         _;
     }
 
-    /// @notice voters can register, so that contract can have their info in the database
+    function startVote() external {
+        if(registeredContestant.length < 2) {
+            revert AtLeastTwoCandidateNeeded();
+        }
+        if(startedVote) {
+            revert VotingStartedAlready();
+        }
+        startedVote = true;
+    }
+
     function RegisterVoter() external {
+        if(startedVote) {
+            revert VotingStartedAlready();
+        }
         address _voter = msg.sender;
-        require(_voter != address(0), "Cannot add address zero!");
+
+        if(_voter == address(0)) {
+            revert CannotRegisterAddressZero();
+        }
 
         bool status = validRegisteredVoter(_voter);
 
@@ -50,11 +74,14 @@ contract Voting {
         }
     }
 
-    function RegisterContestant(address _contestant, string memory _name) external onlyOwner {
-        // Contestant storage contestant =
+    function RegisterContestant(address _contestant, string memory _name) external onlyOfficial {
+        if(startedVote) {
+            revert VotingStartedAlready();
+        }
+
         bool status = validRegisteredContestant(_contestant);
         if (!status) {
-            registeredContestant.push(Contestant(_contestant, _name));
+            registeredContestant.push(Contestant(_contestant, 0));
         } else {
             revert("Already registered!");
         }
@@ -75,22 +102,48 @@ contract Voting {
     }
 
     function vote(address _contestant) external {
+        if(!startedVote) {
+            revert VotingIsYetToStart();
+        }
+
         address _voter = msg.sender;
         bool contestantStatus = validRegisteredContestant(_contestant);
         require(contestantStatus, "This address is not a contestant");
         bool status = validRegisteredVoter(_voter);
 
         if(alreadyVoted[_voter] == true) {
-            revert("You've already casted your vote!");
+            revert AlreadyVoted();
         }
 
         if (status) {
-            alreadyVoted[_voter] = true;
-            voteCounter[_contestant] += 1;
+            revert NotAContestant();
+        }
+
+        alreadyVoted[_voter] = true;
+
+        for (uint i = 0; i < voteContestantList.length; i++){
+            if(voteContestantList[i].contestant == _contestant) {
+                // incrementing the vote count here
+                voteContestantList[i].voteCount++;
+            }
         }
     }
 
-    function pickWinner(address _contestant) external view returns(uint winner) {
-        winner = voteCounter[_contestant];
+    function collateResult() external onlyOfficial {
+        Contestant memory __cont;
+
+        uint64 winnerCounter;
+        for(uint256 i = 0; i < registeredContestant.length; i++){
+            if(winnerCounter < registeredContestant[i].voteCount){
+                winnerCounter = registeredContestant[i].voteCount;
+                __cont = registeredContestant[i];
+            }
+        }
+
+        winner = __cont;
+    }
+
+    function returnWinner() external view onlyOfficial returns(Contestant memory) {
+        return winner;
     }
 }
